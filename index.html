@@ -53,6 +53,9 @@
       <button class="button" onclick="setBrush('sizeChanging')">Size Changing Brush</button>
       <button class="button" onclick="setBrush('colorChanging')">Color Changing Brush</button>
       <button class="button" onclick="setBrush('filling')">Filling Brush</button>
+      <button class="button" onclick="setBrush('spray')">Spray Brush</button>
+      <button class="button" onclick="setBrush('sticker')">Sticker Tool</button>
+      <button class="button" onclick="setBrush('eraser')">Eraser</button>
       <button class="button" onclick="clearCanvas()">Clear Canvas</button>
       <button class="button" onclick="muddleCanvas()">Muddle Canvas</button>
     </div>
@@ -62,7 +65,7 @@
     </div>
     <div class="slider-container">
       <label class="slider-label">Scale: <span id="scaleValue">1</span></label>
-      <input type="range" id="scaleSlider" class="slider" min="0.1" max="5" step="0.1" value="1" oninput="updateScaleValue()">
+      <input type="range" id="scaleSlider" class="slider" min="0.1" max="10" step="0.1" value="1" oninput="updateScaleValue()">
     </div>
     <div class="slider-container">
       <label class="slider-label">Color Saturation: <span id="saturationValue">100</span></label>
@@ -84,8 +87,7 @@
     let saturation = 100;
 
     let colorHue = 0;
-    let colorChangeCounter = 0;
-    let colorHoldTime = 0;
+    let colorChangeRate = 1;
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
@@ -123,6 +125,12 @@
         colorChangingBrush(previousX, previousY, x, y);
       } else if (currentBrush === 'filling') {
         fillingBrush(previousX, previousY, x, y);
+      } else if (currentBrush === 'spray') {
+        sprayBrush(x, y);
+      } else if (currentBrush === 'sticker') {
+        stickerBrush(x, y);
+      } else if (currentBrush === 'eraser') {
+        eraserBrush(x, y);
       }
 
       previousX = x;
@@ -185,40 +193,75 @@
     function sizeChangingBrush(x1, y1, x2, y2) {
       let weight = (sin(frameCount * 0.1) * 5 + 6) * scale; // Regularly changing size
       strokeWeight(weight);
-      stroke(colorHue, saturation, 100, opacity);
+      stroke((colorHue) % 360, saturation, 100, opacity);
       line(x1, y1, x2, y2);
     }
 
     function colorChangingBrush(x1, y1, x2, y2) {
-      if (colorHoldTime <= 0) {
-        // Randomly decide how long to hold the current color
-        colorHoldTime = floor(random(10, 100));
-        // Randomly decide whether to change color or not
-        if (random(100) < randomness) {
-          colorHue = random(360);
-        }
-      }
-      colorHoldTime--;
+      // Smoothly change colorHue with random rate
+      colorHue = (colorHue + colorChangeRate) % 360;
+      colorChangeRate = random(0.5, 5) * (randomness / 100); // Rate influenced by randomness
       stroke(colorHue, saturation, 100, opacity);
       strokeWeight(2 * scale);
       line(x1, y1, x2, y2);
     }
 
     function fillingBrush(x1, y1, x2, y2) {
-      stroke(colorHue, saturation, 100, opacity);
-      strokeWeight(1 * scale);
-      // Create a filled shape between current and previous points
       if (previousX !== null && previousY !== null) {
-        fill(colorHue, saturation, 100, opacity);
+        fill((colorHue) % 360, saturation, 100, opacity);
         noStroke();
         beginShape();
         vertex(previousX, previousY);
         vertex(x1, y1);
         vertex(x2, y2);
         endShape(CLOSE);
-      } else {
-        point(x1, y1);
       }
+    }
+
+    function sprayBrush(x, y) {
+      let sprayRadius = 20 * scale;
+      let density = 50;
+      fill((colorHue) % 360, saturation, 100, opacity);
+      noStroke();
+      for (let i = 0; i < density; i++) {
+        let angle = random(TWO_PI);
+        let radius = random(sprayRadius);
+        let px = x + cos(angle) * radius;
+        let py = y + sin(angle) * radius;
+        ellipse(px, py, 1, 1);
+      }
+    }
+
+    function stickerBrush(x, y) {
+      let shapes = ['circle', 'square', 'triangle', 'star'];
+      let shape = random(shapes);
+      let size = random(10, 50) * scale;
+      fill(random(360), saturation, 100, opacity);
+      noStroke();
+      push();
+      translate(x, y);
+      rotate(random(TWO_PI));
+      if (shape === 'circle') {
+        ellipse(0, 0, size, size);
+      } else if (shape === 'square') {
+        rectMode(CENTER);
+        rect(0, 0, size, size);
+      } else if (shape === 'triangle') {
+        triangle(
+          -size / 2, size / 2,
+          size / 2, size / 2,
+          0, -size / 2
+        );
+      } else if (shape === 'star') {
+        star(0, 0, size / 2, size, 5);
+      }
+      pop();
+    }
+
+    function eraserBrush(x, y) {
+      stroke(0);
+      strokeWeight(20 * scale);
+      line(previousX, previousY, x, y);
     }
 
     // Utility Functions
@@ -226,6 +269,21 @@
       let controlsRect = document.getElementById('controls').getBoundingClientRect();
       return mouseX >= controlsRect.left && mouseX <= controlsRect.right &&
              mouseY >= controlsRect.top && mouseY <= controlsRect.bottom;
+    }
+
+    function star(x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2.0;
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
     }
 
     // Prevent scrolling on mobile
