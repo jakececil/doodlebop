@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Generative Art</title>
+  <!-- Include p5.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      touch-action: none; /* Prevent default touch actions */
+    }
+    canvas {
+      display: block;
+    }
+    /* Simple UI styling */
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+    }
+    .button {
+      padding: 10px 15px;
+      margin: 5px;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .button:hover {
+      background: rgba(200, 200, 200, 0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- UI Controls -->
+  <div id="controls">
+    <button class="button" onclick="setBrush('noise')">Noise Brush</button>
+    <button class="button" onclick="setBrush('pixelDissolve')">Pixel Dissolve</button>
+    <button class="button" onclick="setBrush('ink')">Organic Ink</button>
+    <button class="button" onclick="clearCanvas()">Clear Canvas</button>
+  </div>
+
+  <script>
+    let currentBrush = 'noise';
+    let previousX = null;
+    let previousY = null;
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      background(0);
+      strokeWeight(2);
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+      background(0);
+    }
+
+    function draw() {
+      // No continuous drawing required
+    }
+
+    function touchMoved() {
+      let x = mouseX;
+      let y = mouseY;
+
+      if (previousX === null || previousY === null) {
+        previousX = x;
+        previousY = y;
+      }
+
+      stroke(randomColor());
+
+      if (currentBrush === 'noise') {
+        noiseBrush(previousX, previousY, x, y);
+      } else if (currentBrush === 'pixelDissolve') {
+        pixelDissolveBrush(previousX, previousY, x, y);
+      } else if (currentBrush === 'ink') {
+        organicInkBrush(previousX, previousY, x, y);
+      }
+
+      previousX = x;
+      previousY = y;
+
+      return false; // Prevent default behavior
+    }
+
+    function touchEnded() {
+      previousX = null;
+      previousY = null;
+    }
+
+    function setBrush(brush) {
+      currentBrush = brush;
+    }
+
+    function clearCanvas() {
+      background(0);
+    }
+
+    function randomColor() {
+      return color(random(255), random(255), random(255));
+    }
+
+    // Brush Implementations
+    function noiseBrush(x1, y1, x2, y2) {
+      line(x1, y1, x2, y2);
+      let density = 20;
+      for (let i = 0; i < density; i++) {
+        let offsetX = random(-10, 10);
+        let offsetY = random(-10, 10);
+        point(x2 + offsetX, y2 + offsetY);
+      }
+    }
+
+    function pixelDissolveBrush(x1, y1, x2, y2) {
+      line(x1, y1, x2, y2);
+      loadPixels();
+      let d = pixelDensity();
+      let totalPixels = 4 * (width * d) * (height * d);
+      for (let i = 0; i < 1000; i++) {
+        let index = floor(random(totalPixels / 4)) * 4;
+        pixels[index] = pixels[index + floor(random(-40, 40))];
+        pixels[index + 1] = pixels[index + 1 + floor(random(-40, 40))];
+        pixels[index + 2] = pixels[index + 2 + floor(random(-40, 40))];
+      }
+      updatePixels();
+    }
+
+    function organicInkBrush(x1, y1, x2, y2) {
+      strokeWeight(random(1, 5));
+      line(x1, y1, x2, y2);
+      strokeWeight(2);
+    }
+
+    // Prevent scrolling on mobile
+    document.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+  </script>
+
+</body>
+</html>
