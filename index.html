@@ -69,7 +69,7 @@
       <button class="button" onclick="saveCanvasArt()">Save Art</button>
     </div>
 
-    <!-- Parameter Sliders with Randomness Controls -->
+    <!-- Hue Slider -->
     <div class="slider-container">
       <label class="slider-label">Hue: <span id="hueValue">0</span></label>
       <input type="range" id="hueSlider" class="slider" min="0" max="360" value="0" oninput="updateParameter('hue')">
@@ -83,6 +83,7 @@
       </div>
     </div>
 
+    <!-- Saturation Slider -->
     <div class="slider-container">
       <label class="slider-label">Saturation: <span id="saturationValue">100</span></label>
       <input type="range" id="saturationSlider" class="slider" min="0" max="100" value="100" oninput="updateParameter('saturation')">
@@ -96,6 +97,7 @@
       </div>
     </div>
 
+    <!-- Brightness Slider -->
     <div class="slider-container">
       <label class="slider-label">Brightness: <span id="brightnessValue">100</span></label>
       <input type="range" id="brightnessSlider" class="slider" min="0" max="100" value="100" oninput="updateParameter('brightness')">
@@ -109,6 +111,7 @@
       </div>
     </div>
 
+    <!-- Opacity Slider -->
     <div class="slider-container">
       <label class="slider-label">Opacity: <span id="opacityValue">255</span></label>
       <input type="range" id="opacitySlider" class="slider" min="0" max="255" value="255" oninput="updateParameter('opacity')">
@@ -122,6 +125,7 @@
       </div>
     </div>
 
+    <!-- Stroke Weight Slider -->
     <div class="slider-container">
       <label class="slider-label">Stroke Weight: <span id="strokeWeightValue">5</span></label>
       <input type="range" id="strokeWeightSlider" class="slider" min="1" max="50" value="5" oninput="updateParameter('strokeWeight')">
@@ -135,6 +139,7 @@
       </div>
     </div>
 
+    <!-- Spread Slider -->
     <div class="slider-container">
       <label class="slider-label">Spread: <span id="spreadValue">1</span></label>
       <input type="range" id="spreadSlider" class="slider" min="1" max="50" value="1" oninput="updateParameter('spread')">
@@ -147,6 +152,7 @@
         <input type="range" id="spreadRandomnessSlider" class="slider" min="0" max="50" value="0" oninput="updateRandomness('spread')">
       </div>
     </div>
+
   </div>
 
   <script>
@@ -178,6 +184,9 @@
       createCanvas(windowWidth, windowHeight);
       background(0);
       colorMode(HSB, 360, 100, 100, 255);
+
+      // Initialize parameter values from sliders
+      updateAllParameters();
     }
 
     function windowResized() {
@@ -252,23 +261,31 @@
 
     // Update Parameters
     function updateParameter(param) {
-      let value = document.getElementById(`${param}Slider`).value;
+      let value = document.getElementById(param + 'Slider').value;
       parameters[param] = parseFloat(value);
-      document.getElementById(`${param}Value`).textContent = value;
+      document.getElementById(param + 'Value').textContent = value;
+    }
+
+    // Update all parameters at startup
+    function updateAllParameters() {
+      let params = ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread'];
+      for (let param of params) {
+        updateParameter(param);
+      }
     }
 
     // Toggle Randomness
     function toggleRandomness(param) {
-      let enabled = document.getElementById(`${param}RandomToggle`).checked;
+      let enabled = document.getElementById(param + 'RandomToggle').checked;
       randomness[param].enabled = enabled;
-      document.getElementById(`${param}RandomnessContainer`).style.display = enabled ? 'block' : 'none';
+      document.getElementById(param + 'RandomnessContainer').style.display = enabled ? 'block' : 'none';
     }
 
     // Update Randomness Amount
     function updateRandomness(param) {
-      let value = document.getElementById(`${param}RandomnessSlider`).value;
+      let value = document.getElementById(param + 'RandomnessSlider').value;
       randomness[param].amount = parseFloat(value);
-      document.getElementById(`${param}RandomnessValue`).textContent = value;
+      document.getElementById(param + 'RandomnessValue').textContent = value;
     }
 
     // Brush Implementations
