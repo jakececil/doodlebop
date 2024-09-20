@@ -73,9 +73,89 @@
     </div>
 
     <!-- Hue Slider -->
-    <!-- ... (Sliders remain the same as before) ... -->
+    <div class="slider-container">
+      <label class="slider-label">Hue: <span id="hueValue">0</span></label>
+      <input type="range" id="hueSlider" class="slider" min="0" max="360" value="0">
+      <div class="toggle-container">
+        <input type="checkbox" id="hueRandomToggle">
+        <label class="toggle-label" for="hueRandomToggle">Random Hue</label>
+      </div>
+      <div id="hueRandomnessContainer" style="display: none;">
+        <label class="slider-label">Hue Randomness: <span id="hueRandomnessValue">0</span></label>
+        <input type="range" id="hueRandomnessSlider" class="slider" min="0" max="180" value="0">
+      </div>
+    </div>
 
-    <!-- Include the rest of the sliders and controls as in the previous code -->
+    <!-- Saturation Slider -->
+    <div class="slider-container">
+      <label class="slider-label">Saturation: <span id="saturationValue">100</span></label>
+      <input type="range" id="saturationSlider" class="slider" min="0" max="100" value="100">
+      <div class="toggle-container">
+        <input type="checkbox" id="saturationRandomToggle">
+        <label class="toggle-label" for="saturationRandomToggle">Random Saturation</label>
+      </div>
+      <div id="saturationRandomnessContainer" style="display: none;">
+        <label class="slider-label">Saturation Randomness: <span id="saturationRandomnessValue">0</span></label>
+        <input type="range" id="saturationRandomnessSlider" class="slider" min="0" max="100" value="0">
+      </div>
+    </div>
+
+    <!-- Brightness Slider -->
+    <div class="slider-container">
+      <label class="slider-label">Brightness: <span id="brightnessValue">100</span></label>
+      <input type="range" id="brightnessSlider" class="slider" min="0" max="100" value="100">
+      <div class="toggle-container">
+        <input type="checkbox" id="brightnessRandomToggle">
+        <label class="toggle-label" for="brightnessRandomToggle">Random Brightness</label>
+      </div>
+      <div id="brightnessRandomnessContainer" style="display: none;">
+        <label class="slider-label">Brightness Randomness: <span id="brightnessRandomnessValue">0</span></label>
+        <input type="range" id="brightnessRandomnessSlider" class="slider" min="0" max="100" value="0">
+      </div>
+    </div>
+
+    <!-- Opacity Slider -->
+    <div class="slider-container">
+      <label class="slider-label">Opacity: <span id="opacityValue">255</span></label>
+      <input type="range" id="opacitySlider" class="slider" min="0" max="255" value="255">
+      <div class="toggle-container">
+        <input type="checkbox" id="opacityRandomToggle">
+        <label class="toggle-label" for="opacityRandomToggle">Random Opacity</label>
+      </div>
+      <div id="opacityRandomnessContainer" style="display: none;">
+        <label class="slider-label">Opacity Randomness: <span id="opacityRandomnessValue">0</span></label>
+        <input type="range" id="opacityRandomnessSlider" class="slider" min="0" max="255" value="0">
+      </div>
+    </div>
+
+    <!-- Stroke Weight Slider -->
+    <div class="slider-container">
+      <label class="slider-label">Stroke Weight: <span id="strokeWeightValue">5</span></label>
+      <input type="range" id="strokeWeightSlider" class="slider" min="1" max="50" value="5">
+      <div class="toggle-container">
+        <input type="checkbox" id="strokeWeightRandomToggle">
+        <label class="toggle-label" for="strokeWeightRandomToggle">Random Stroke Weight</label>
+      </div>
+      <div id="strokeWeightRandomnessContainer" style="display: none;">
+        <label class="slider-label">Stroke Weight Randomness: <span id="strokeWeightRandomnessValue">0</span></label>
+        <input type="range" id="strokeWeightRandomnessSlider" class="slider" min="0" max="50" value="0">
+      </div>
+    </div>
+
+    <!-- Spread Slider -->
+    <div class="slider-container">
+      <label class="slider-label">Spread: <span id="spreadValue">1</span></label>
+      <input type="range" id="spreadSlider" class="slider" min="1" max="50" value="1">
+      <div class="toggle-container">
+        <input type="checkbox" id="spreadRandomToggle">
+        <label class="toggle-label" for="spreadRandomToggle">Random Spread</label>
+      </div>
+      <div id="spreadRandomnessContainer" style="display: none;">
+        <label class="slider-label">Spread Randomness: <span id="spreadRandomnessValue">0</span></label>
+        <input type="range" id="spreadRandomnessSlider" class="slider" min="0" max="50" value="0">
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -116,7 +196,7 @@
     function setup() {
       createCanvas(windowWidth, windowHeight);
       gfx = createGraphics(windowWidth, windowHeight);
-      gfx.background(0);
+      gfx.background(0); // Set the background to black
       gfx.colorMode(HSB, 360, 100, 100, 255);
       colorMode(HSB, 360, 100, 100, 255);
 
@@ -135,7 +215,7 @@
     }
 
     function draw() {
-      background(0);
+      background(0); // Ensure the main canvas background is black
       image(gfx, 0, 0);
     }
 
@@ -188,7 +268,9 @@
     function touchEnded() {
       previousX = null;
       previousY = null;
-      saveHistory(); // Save the state after drawing
+      if (currentBrush === 'base' || currentBrush === 'eraser') {
+        saveHistory(); // Save the state after drawing
+      }
     }
 
     function setBrush(brush) {
@@ -196,7 +278,7 @@
     }
 
     function clearCanvas() {
-      gfx.background(0);
+      gfx.background(0); // Clear the graphics buffer to black
       saveHistory(); // Save the cleared state
     }
 
@@ -256,6 +338,7 @@
         let valueLabel = document.getElementById(param + 'Value');
         slider.value = defaultParameters[param];
         valueLabel.textContent = defaultParameters[param];
+        parameters[param] = defaultParameters[param];
       });
 
       // Reset randomness toggles and amounts
