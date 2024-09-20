@@ -52,9 +52,9 @@
     <div>
       <button class="button" onclick="setBrush('sizeChanging')">Size Changing Brush</button>
       <button class="button" onclick="setBrush('colorChanging')">Color Changing Brush</button>
-      <button class="button" onclick="setBrush('filling')">Filling Brush</button>
       <button class="button" onclick="setBrush('spray')">Spray Brush</button>
       <button class="button" onclick="setBrush('sticker')">Sticker Tool</button>
+      <button class="button" onclick="setBrush('paintBucket')">Paint Bucket</button>
       <button class="button" onclick="setBrush('eraser')">Eraser</button>
       <button class="button" onclick="clearCanvas()">Clear Canvas</button>
       <button class="button" onclick="muddleCanvas()">Muddle Canvas</button>
@@ -66,6 +66,10 @@
     <div class="slider-container">
       <label class="slider-label">Scale: <span id="scaleValue">1</span></label>
       <input type="range" id="scaleSlider" class="slider" min="0.1" max="10" step="0.1" value="1" oninput="updateScaleValue()">
+    </div>
+    <div class="slider-container">
+      <label class="slider-label">Base Hue: <span id="hueValue">0</span></label>
+      <input type="range" id="hueSlider" class="slider" min="0" max="360" value="0" oninput="updateHueValue()">
     </div>
     <div class="slider-container">
       <label class="slider-label">Color Saturation: <span id="saturationValue">100</span></label>
@@ -85,6 +89,7 @@
     let opacity = 255;
     let randomness = 50;
     let saturation = 100;
+    let baseHue = 0;
 
     let colorHue = 0;
     let colorChangeRate = 1;
@@ -105,6 +110,23 @@
       // No continuous drawing required
     }
 
+    function touchStarted() {
+      if (isMouseOverControls()) {
+        return false;
+      }
+
+      let x = mouseX;
+      let y = mouseY;
+
+      if (currentBrush === 'sticker') {
+        stickerBrush(x, y);
+      } else if (currentBrush === 'paintBucket') {
+        paintBucketTool(x, y);
+      }
+
+      return false;
+    }
+
     function touchMoved() {
       // Prevent drawing under the controls
       if (isMouseOverControls()) {
@@ -123,14 +145,14 @@
         sizeChangingBrush(previousX, previousY, x, y);
       } else if (currentBrush === 'colorChanging') {
         colorChangingBrush(previousX, previousY, x, y);
-      } else if (currentBrush === 'filling') {
-        fillingBrush(previousX, previousY, x, y);
       } else if (currentBrush === 'spray') {
         sprayBrush(x, y);
       } else if (currentBrush === 'sticker') {
         stickerBrush(x, y);
       } else if (currentBrush === 'eraser') {
-        eraserBrush(x, y);
+        eraserBrush(previousX, previousY, x, y);
+      } else if (currentBrush === 'paintBucket') {
+        // Do nothing on drag for paint bucket
       }
 
       previousX = x;
@@ -155,15 +177,18 @@
     function muddleCanvas() {
       loadPixels();
       let d = pixelDensity();
-      let totalPixels = 4 * (width * d) * (height * d);
-      for (let i = 0; i < totalPixels; i += 4) {
-        let rand = floor(random(-randomness, randomness)) * 4;
-        let newIndex = i + rand;
-        if (newIndex >= 0 && newIndex < totalPixels) {
-          pixels[i] = pixels[newIndex];
-          pixels[i + 1] = pixels[newIndex + 1];
-          pixels[i + 2] = pixels[newIndex + 2];
-          pixels[i + 3] = pixels[newIndex + 3];
+      let w = width * d;
+      let h = height * d;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let index = 4 * (x + y * w);
+          let randX = constrain(x + floor(random(-randomness, randomness)), 0, w - 1);
+          let randY = constrain(y + floor(random(-randomness, randomness)), 0, h - 1);
+          let newIndex = 4 * (randX + randY * w);
+          pixels[index] = pixels[newIndex];
+          pixels[index + 1] = pixels[newIndex + 1];
+          pixels[index + 2] = pixels[newIndex + 2];
+          pixels[index + 3] = pixels[newIndex + 3];
         }
       }
       updatePixels();
@@ -189,11 +214,16 @@
       document.getElementById('saturationValue').textContent = saturation;
     }
 
+    function updateHueValue() {
+      baseHue = document.getElementById('hueSlider').value;
+      document.getElementById('hueValue').textContent = baseHue;
+    }
+
     // Brush Implementations
     function sizeChangingBrush(x1, y1, x2, y2) {
       let weight = (sin(frameCount * 0.1) * 5 + 6) * scale; // Regularly changing size
       strokeWeight(weight);
-      stroke((colorHue) % 360, saturation, 100, opacity);
+      stroke(baseHue, saturation, 100, opacity);
       line(x1, y1, x2, y2);
     }
 
@@ -201,27 +231,18 @@
       // Smoothly change colorHue with random rate
       colorHue = (colorHue + colorChangeRate) % 360;
       colorChangeRate = random(0.5, 5) * (randomness / 100); // Rate influenced by randomness
-      stroke(colorHue, saturation, 100, opacity);
+      let randomSaturation = random(50, 100);
+      stroke(colorHue, randomSaturation, 100, opacity);
       strokeWeight(2 * scale);
       line(x1, y1, x2, y2);
-    }
-
-    function fillingBrush(x1, y1, x2, y2) {
-      if (previousX !== null && previousY !== null) {
-        fill((colorHue) % 360, saturation, 100, opacity);
-        noStroke();
-        beginShape();
-        vertex(previousX, previousY);
-        vertex(x1, y1);
-        vertex(x2, y2);
-        endShape(CLOSE);
-      }
     }
 
     function sprayBrush(x, y) {
       let sprayRadius = 20 * scale;
       let density = 50;
-      fill((colorHue) % 360, saturation, 100, opacity);
+      let randomHue = (baseHue + random(-randomness, randomness)) % 360;
+      let randomSaturation = random(50, 100);
+      fill(randomHue, randomSaturation, 100, opacity);
       noStroke();
       for (let i = 0; i < density; i++) {
         let angle = random(TWO_PI);
@@ -236,7 +257,9 @@
       let shapes = ['circle', 'square', 'triangle', 'star'];
       let shape = random(shapes);
       let size = random(10, 50) * scale;
-      fill(random(360), saturation, 100, opacity);
+      let randomHue = random(360);
+      let randomSaturation = random(50, 100);
+      fill(randomHue, randomSaturation, 100, opacity);
       noStroke();
       push();
       translate(x, y);
@@ -258,10 +281,65 @@
       pop();
     }
 
-    function eraserBrush(x, y) {
+    function eraserBrush(x1, y1, x2, y2) {
       stroke(0);
       strokeWeight(20 * scale);
-      line(previousX, previousY, x, y);
+      line(x1, y1, x2, y2);
+    }
+
+    function paintBucketTool(x, y) {
+      loadPixels();
+      let d = pixelDensity();
+      let w = width * d;
+      let h = height * d;
+      let startX = floor(x * d);
+      let startY = floor(y * d);
+      let index = 4 * (startX + startY * w);
+      let targetColor = [
+        pixels[index],
+        pixels[index + 1],
+        pixels[index + 2],
+        pixels[index + 3]
+      ];
+      let replacementColor = color(baseHue, saturation, 100, opacity);
+      let replacementColorArray = replacementColor.levels;
+
+      if (colorsMatch(targetColor, replacementColorArray)) {
+        return;
+      }
+
+      floodFill(startX, startY, targetColor, replacementColorArray, w, h);
+      updatePixels();
+    }
+
+    function floodFill(x, y, targetColor, replacementColor, w, h) {
+      let stack = [[x, y]];
+      while (stack.length > 0) {
+        let [currentX, currentY] = stack.pop();
+        let index = 4 * (currentX + currentY * w);
+        let currentColor = [
+          pixels[index],
+          pixels[index + 1],
+          pixels[index + 2],
+          pixels[index + 3]
+        ];
+
+        if (colorsMatch(currentColor, targetColor)) {
+          pixels[index] = replacementColor[0];
+          pixels[index + 1] = replacementColor[1];
+          pixels[index + 2] = replacementColor[2];
+          pixels[index + 3] = replacementColor[3];
+
+          if (currentX + 1 < w) stack.push([currentX + 1, currentY]);
+          if (currentX - 1 >= 0) stack.push([currentX - 1, currentY]);
+          if (currentY + 1 < h) stack.push([currentX, currentY + 1]);
+          if (currentY - 1 >= 0) stack.push([currentX, currentY - 1]);
+        }
+      }
+    }
+
+    function colorsMatch(a, b) {
+      return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
     }
 
     // Utility Functions
