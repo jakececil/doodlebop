@@ -15,24 +15,25 @@
     .button-container { display: flex; flex-direction: column; margin-right: 10px; }
     .button { padding: 5px 10px; margin: 5px 0; background: rgba(200, 200, 200, 0.8);
       border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .button.selected { background: rgba(100, 100, 100, 0.8); color: white; }
     .slider-container { margin: 5px 0; }
     .slider-label { font-size: 12px; display: block; }
     .slider { width: 150px; }
     .toggle-container { display: flex; align-items: center; margin: 5px 0; }
     .toggle-label { font-size: 12px; margin-left: 5px; }
     /* Highlighting the selected parameter */
-    .selected { background-color: rgba(200, 200, 200, 0.2); }
+    .selected-parameter { background-color: rgba(200, 200, 200, 0.2); }
   </style>
 </head>
 <body>
 
   <div id="controls">
     <div class="button-container">
-      <button class="button" onclick="setBrush('base')">Base Brush</button>
-      <button class="button" onclick="setBrush('spray')">Spray Tool</button>
-      <button class="button" onclick="setBrush('sticker')">Sticker Tool</button>
-      <button class="button" onclick="setBrush('paintBucket')">Paint Bucket</button>
-      <button class="button" onclick="setBrush('eraser')">Eraser</button>
+      <button class="button" id="baseButton" onclick="setBrush('base')">Base Brush</button>
+      <button class="button" id="sprayButton" onclick="setBrush('spray')">Spray Tool</button>
+      <button class="button" id="stickerButton" onclick="setBrush('sticker')">Sticker Tool</button>
+      <button class="button" id="paintBucketButton" onclick="setBrush('paintBucket')">Paint Bucket</button>
+      <button class="button" id="eraserButton" onclick="setBrush('eraser')">Eraser</button>
       <button class="button" onclick="applyMuddle(10)">Muddle</button>
       <button class="button" onclick="applyMuddle(100)">Mega Muddle</button>
       <button class="button" onclick="undo()">Undo (E)</button>
@@ -171,6 +172,7 @@
     colorMode(HSB, 360, 100, 100, 255);
     initializeControls();
     highlightCurrentParameter();
+    highlightCurrentBrush();
     saveHistory();
 
     // Keyboard events
@@ -195,15 +197,14 @@
   function touchStarted(event) {
     if (event.target.closest('#controls')) return;
 
-    saveHistory();
-    redoStack = [];
+    redoStack = []; // Clear redo stack when a new action starts
 
     if (currentBrush === 'paintBucket') {
       paintBucketTool(mouseX, mouseY);
+      saveHistory();
     } else if (currentBrush === 'sticker') {
       stickerTool(mouseX, mouseY);
-    } else if (currentBrush === 'eraser') {
-      eraserTool(previousX, previousY, mouseX, mouseY);
+      saveHistory();
     }
 
     previousX = mouseX;
@@ -225,10 +226,7 @@
     } else if (currentBrush === 'eraser') {
       eraserTool(previousX, previousY, mouseX, mouseY);
     } else if (currentBrush === 'sticker') {
-      if (millis() - lastStickerTime > 100 / parameters.speed) {
-        stickerTool(mouseX, mouseY);
-        lastStickerTime = millis();
-      }
+      stickerTool(mouseX, mouseY);
     }
 
     previousX = mouseX;
@@ -239,10 +237,14 @@
   function touchEnded() {
     previousX = null;
     previousY = null;
+    if (['base', 'spray', 'eraser', 'sticker'].includes(currentBrush)) {
+      saveHistory();
+    }
   }
 
   function setBrush(brush) {
     currentBrush = brush;
+    highlightCurrentBrush();
   }
 
   function clearCanvas() {
@@ -256,9 +258,6 @@
   }
 
   function applyMuddle(amount) {
-    saveHistory();
-    redoStack = [];
-
     gfx.loadPixels();
     let d = pixelDensity(), w = gfx.width * d, h = gfx.height * d;
     for (let y = 0; y < h; y++) {
@@ -274,6 +273,8 @@
       }
     }
     gfx.updatePixels();
+    saveHistory();
+    redoStack = [];
   }
 
   function undo() {
@@ -283,7 +284,6 @@
       gfx.clear();
       gfx.image(img, 0, 0);
     }
-    // Do not allow history to become empty
   }
 
   function redo() {
@@ -377,9 +377,9 @@
     parameterList.forEach((param, index) => {
       const container = document.getElementById(param + 'Container');
       if (index === currentParameterIndex) {
-        container.classList.add('selected');
+        container.classList.add('selected-parameter');
       } else {
-        container.classList.remove('selected');
+        container.classList.remove('selected-parameter');
       }
     });
   }
@@ -450,7 +450,7 @@
     gfx.fill(randomness.hue.value, randomness.saturation.value, randomness.brightness.value, randomness.opacity.value);
     gfx.noStroke();
     let size = getAdjustedValue('strokeWeight', randomness.strokeWeight.value * 5);
-    let shapes = ['circle', 'square', 'triangle', 'star', 'pentagon', 'hexagon', 'heart', 'spiral', 'cloud', 'flower'];
+    let shapes = ['circle', 'square', 'triangle', 'star', 'pentagon', 'hexagon', 'heart', 'cloud', 'flower'];
     let shape = random(shapes);
 
     gfx.push();
@@ -515,8 +515,6 @@
       polygon(g, 0, 0, size / 2, 6);
     } else if (shape === 'heart') {
       heart(g, 0, 0, size);
-    } else if (shape === 'spiral') {
-      spiral(g, 0, 0, size);
     } else if (shape === 'cloud') {
       cloud(g, 0, 0, size);
     } else if (shape === 'flower') {
@@ -556,21 +554,6 @@
     g.bezierVertex(x + size / 2, y - size / 2, x + size / 2, y + size / 3, x, y + size / 2);
     g.bezierVertex(x - size / 2, y + size / 3, x - size / 2, y - size / 2, x, y - size / 2);
     g.endShape(CLOSE);
-  }
-
-  function spiral(g, x, y, size) {
-    let angle = 0;
-    let radius = 0;
-    g.noFill();
-    g.beginShape();
-    for (let i = 0; i < 100; i++) {
-      let sx = x + cos(angle) * radius;
-      let sy = y + sin(angle) * radius;
-      g.vertex(sx, sy);
-      angle += 0.1;
-      radius += size / 100;
-    }
-    g.endShape();
   }
 
   function cloud(g, x, y, size) {
@@ -620,6 +603,18 @@
   function colorsMatch(a, b) {
     return a[0] === b[0] && a[1] === b[1] &&
            a[2] === b[2] && a[3] === b[3];
+  }
+
+  function highlightCurrentBrush() {
+    const brushes = ['base', 'spray', 'sticker', 'paintBucket', 'eraser'];
+    brushes.forEach(brush => {
+      const button = document.getElementById(brush + 'Button');
+      if (brush === currentBrush) {
+        button.classList.add('selected');
+      } else {
+        button.classList.remove('selected');
+      }
+    });
   }
 </script>
 </body>
