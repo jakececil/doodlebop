@@ -123,14 +123,13 @@
         </div>
       </div>
 
-      <!-- Randomness Speed Slider -->
+      <!-- Speed Slider -->
       <div class="slider-container">
-        <label class="slider-label">Randomness Speed: <span id="randomnessSpeedValue">1</span></label>
-        <input type="range" id="randomnessSpeedSlider" class="slider" min="0" max="10" value="1" step="0.1">
+        <label class="slider-label">Speed: <span id="speedValue">1</span></label>
+        <input type="range" id="speedSlider" class="slider" min="0.1" max="10" value="1" step="0.1">
       </div>
     </div>
   </div>
-
   <script>
     let currentBrush = 'base';
     let previousX = null;
@@ -138,7 +137,7 @@
 
     const defaultParameters = {
       hue: 0, saturation: 100, brightness: 100, opacity: 255,
-      strokeWeight: 5, spread: 1, randomnessSpeed: 1
+      strokeWeight: 5, spread: 1, speed: 1
     };
     let parameters = { ...defaultParameters };
     let randomness = {};
@@ -147,8 +146,11 @@
     });
 
     let history = [];
-    let maxHistorySize = 20;
+    let maxHistorySize = 50;
     let gfx;
+
+    // For Sticker Tool Frequency
+    let lastStickerTime = 0;
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
@@ -178,9 +180,16 @@
     function touchStarted(event) {
       if (event.target.closest('#controls')) return;
       let x = mouseX, y = mouseY;
-      if (currentBrush === 'base' || currentBrush === 'eraser' || currentBrush === 'spray') saveHistory();
-      if (currentBrush === 'sticker') { stickerTool(x, y); saveHistory(); }
-      else if (currentBrush === 'paintBucket') { paintBucketTool(x, y); saveHistory(); }
+
+      if (currentBrush !== 'paintBucket') saveHistory();
+
+      if (currentBrush === 'sticker') {
+        stickerTool(x, y);
+      } else if (currentBrush === 'paintBucket') {
+        paintBucketTool(x, y);
+        saveHistory();
+      }
+
       previousX = x; previousY = y;
       return false;
     }
@@ -192,6 +201,12 @@
       if (currentBrush === 'base') baseBrush(previousX, previousY, x, y);
       else if (currentBrush === 'spray') sprayTool(x, y);
       else if (currentBrush === 'eraser') eraserTool(previousX, previousY, x, y);
+      else if (currentBrush === 'sticker') {
+        if (millis() - lastStickerTime > 100 / parameters.speed) {
+          stickerTool(x, y);
+          lastStickerTime = millis();
+        }
+      }
       previousX = x; previousY = y;
       return false;
     }
@@ -253,9 +268,9 @@
         parameters[param] = defaultParameters[param];
         randomness[param].value = defaultParameters[param];
       });
-      document.getElementById('randomnessSpeedSlider').value = defaultParameters.randomnessSpeed;
-      document.getElementById('randomnessSpeedValue').textContent = defaultParameters.randomnessSpeed;
-      parameters.randomnessSpeed = defaultParameters.randomnessSpeed;
+      document.getElementById('speedSlider').value = defaultParameters.speed;
+      document.getElementById('speedValue').textContent = defaultParameters.speed;
+      parameters.speed = defaultParameters.speed;
 
       params.forEach(param => {
         randomness[param].enabled = false;
@@ -294,186 +309,186 @@
           randomnessValueLabel.textContent = randomnessSlider.value;
         });
       });
-      let randomnessSpeedSlider = document.getElementById('randomnessSpeedSlider');
-      let randomnessSpeedValue = document.getElementById('randomnessSpeedValue');
-      randomnessSpeedSlider.addEventListener('input', () => {
-        parameters.randomnessSpeed = parseFloat(randomnessSpeedSlider.value);
-        randomnessSpeedValue.textContent = randomnessSpeedSlider.value;
+      let speedSlider = document.getElementById('speedSlider');
+      let speedValue = document.getElementById('speedValue');
+      speedSlider.addEventListener('input', () => {
+        parameters.speed = parseFloat(speedSlider.value);
+        speedValue.textContent = speedSlider.value;
       });
     }
-        // Brush Implementations
-        function baseBrush(x1, y1, x2, y2) {
-          updateRandomness();
-          let hue = randomness.hue.value;
-          let saturation = randomness.saturation.value;
-          let brightness = randomness.brightness.value;
-          let opacity = randomness.opacity.value;
-          let strokeW = getAdjustedValue('strokeWeight', randomness.strokeWeight.value);
-          let spread = getAdjustedValue('spread', randomness.spread.value);
 
-          gfx.stroke(hue, saturation, brightness, opacity);
-          gfx.strokeWeight(strokeW);
+    // Brush Implementations
+    function baseBrush(x1, y1, x2, y2) {
+      updateRandomness();
+      let hue = randomness.hue.value;
+      let saturation = randomness.saturation.value;
+      let brightness = randomness.brightness.value;
+      let opacity = randomness.opacity.value;
+      let strokeW = getAdjustedValue('strokeWeight', randomness.strokeWeight.value);
+      let spread = getAdjustedValue('spread', randomness.spread.value);
 
-          if (spread > 1) {
-            for (let i = 0; i < spread; i++) {
-              let offsetX = random(-spread, spread);
-              let offsetY = random(-spread, spread);
-              gfx.line(x1 + offsetX, y1 + offsetY, x2 + offsetX, y2 + offsetY);
-            }
-          } else {
-            gfx.line(x1, y1, x2, y2);
-          }
+      gfx.stroke(hue, saturation, brightness, opacity);
+      gfx.strokeWeight(strokeW);
+
+      if (spread > 1) {
+        for (let i = 0; i < spread; i++) {
+          let offsetX = random(-spread, spread);
+          let offsetY = random(-spread, spread);
+          gfx.line(x1 + offsetX, y1 + offsetY, x2 + offsetX, y2 + offsetY);
         }
+      } else {
+        gfx.line(x1, y1, x2, y2);
+      }
+    }
 
-        function sprayTool(x, y) {
-          updateRandomness();
-          let hue = randomness.hue.value;
-          let saturation = randomness.saturation.value;
-          let brightness = randomness.brightness.value;
-          let opacity = randomness.opacity.value;
-          let strokeW = getAdjustedValue('strokeWeight', randomness.strokeWeight.value);
-          let spread = getAdjustedValue('spread', randomness.spread.value);
+    function sprayTool(x, y) {
+      updateRandomness();
+      let hue = randomness.hue.value;
+      let saturation = randomness.saturation.value;
+      let brightness = randomness.brightness.value;
+      let opacity = randomness.opacity.value;
+      let strokeW = getAdjustedValue('strokeWeight', randomness.strokeWeight.value);
+      let spread = getAdjustedValue('spread', randomness.spread.value);
 
-          gfx.noStroke();
-          gfx.fill(hue, saturation, brightness, opacity);
-          let density = 50;
-          for (let i = 0; i < density; i++) {
-            let angle = random(TWO_PI);
-            let radius = random(spread);
-            let offsetX = cos(angle) * radius;
-            let offsetY = sin(angle) * radius;
-            gfx.ellipse(x + offsetX, y + offsetY, strokeW, strokeW);
-          }
+      gfx.noStroke();
+      gfx.fill(hue, saturation, brightness, opacity);
+      let density = 50 * parameters.speed;
+      for (let i = 0; i < density; i++) {
+        let angle = random(TWO_PI);
+        let radius = random(spread);
+        let offsetX = cos(angle) * radius;
+        let offsetY = sin(angle) * radius;
+        gfx.ellipse(x + offsetX, y + offsetY, strokeW, strokeW);
+      }
+    }
+
+    function updateRandomness() {
+      let speed = parameters.speed;
+      ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread'].forEach(param => {
+        if (randomness[param].enabled) {
+          let target = parameters[param] + random(-randomness[param].amount, randomness[param].amount);
+          randomness[param].value += (target - randomness[param].value) * 0.1 * speed;
+        } else {
+          randomness[param].value = parameters[param];
         }
+      });
+    }
 
-        function updateRandomness() {
-          let speed = parameters.randomnessSpeed;
-          ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread'].forEach(param => {
-            if (randomness[param].enabled) {
-              let target = parameters[param] + random(-randomness[param].amount, randomness[param].amount);
-              randomness[param].value += (target - randomness[param].value) * 0.1 * speed;
-            } else {
-              randomness[param].value = parameters[param];
-            }
-          });
+    function getAdjustedValue(param, value) {
+      if (param === 'strokeWeight' || param === 'spread') {
+        if (value <= 10) return value;
+        else if (value <= 50) return round(value / 5) * 5;
+        else return round(value / 50) * 50;
+      } else {
+        return value;
+      }
+    }
+
+    function eraserTool(x1, y1, x2, y2) {
+      gfx.stroke(0);
+      gfx.strokeWeight(parameters.strokeWeight * 2);
+      gfx.line(x1, y1, x2, y2);
+    }
+
+    function stickerTool(x, y) {
+      updateRandomness();
+      let hue = randomness.hue.value;
+      let saturation = randomness.saturation.value;
+      let brightness = randomness.brightness.value;
+      let opacity = randomness.opacity.value;
+      let size = getAdjustedValue('strokeWeight', randomness.strokeWeight.value * 5);
+
+      let shapes = ['circle', 'square', 'triangle', 'star'];
+      let shape = random(shapes);
+
+      gfx.fill(hue, saturation, brightness, opacity);
+      gfx.noStroke();
+      gfx.push();
+      gfx.translate(x, y);
+      gfx.rotate(random(TWO_PI));
+      if (shape === 'circle') {
+        gfx.ellipse(0, 0, size, size);
+      } else if (shape === 'square') {
+        gfx.rectMode(CENTER);
+        gfx.rect(0, 0, size, size);
+      } else if (shape === 'triangle') {
+        gfx.triangle(
+          -size / 2, size / 2,
+          size / 2, size / 2,
+          0, -size / 2
+        );
+      } else if (shape === 'star') {
+        star(gfx, 0, 0, size / 2, size, 5);
+      }
+      gfx.pop();
+    }
+
+    function paintBucketTool(x, y) {
+      gfx.loadPixels();
+      let d = pixelDensity(), w = gfx.width * d, h = gfx.height * d;
+      let startX = floor(x * d), startY = floor(y * d);
+      let index = 4 * (startX + startY * w);
+      let targetColor = [
+        gfx.pixels[index], gfx.pixels[index + 1],
+        gfx.pixels[index + 2], gfx.pixels[index + 3]
+      ];
+      updateRandomness();
+      let hue = randomness.hue.value;
+      let saturation = randomness.saturation.value;
+      let brightness = randomness.brightness.value;
+      let opacity = randomness.opacity.value;
+      let replacementColor = gfx.color(hue, saturation, brightness, opacity);
+      let replacementColorArray = replacementColor.levels;
+
+      if (colorsMatch(targetColor, replacementColorArray)) return;
+      floodFill(gfx, startX, startY, targetColor, replacementColorArray, w, h);
+      gfx.updatePixels();
+    }
+
+    function floodFill(g, x, y, targetColor, replacementColor, w, h) {
+      let stack = [[x, y]];
+      while (stack.length > 0) {
+        let [currentX, currentY] = stack.pop();
+        let index = 4 * (currentX + currentY * w);
+        let currentColor = [
+          g.pixels[index], g.pixels[index + 1],
+          g.pixels[index + 2], g.pixels[index + 3]
+        ];
+
+        if (colorsMatch(currentColor, targetColor)) {
+          g.pixels[index] = replacementColor[0];
+          g.pixels[index + 1] = replacementColor[1];
+          g.pixels[index + 2] = replacementColor[2];
+          g.pixels[index + 3] = replacementColor[3];
+
+          if (currentX + 1 < w) stack.push([currentX + 1, currentY]);
+          if (currentX - 1 >= 0) stack.push([currentX - 1, currentY]);
+          if (currentY + 1 < h) stack.push([currentX, currentY + 1]);
+          if (currentY - 1 >= 0) stack.push([currentX, currentY - 1]);
         }
+      }
+    }
 
-        function getAdjustedValue(param, value) {
-          if (param === 'strokeWeight' || param === 'spread') {
-            if (value <= 10) return value;
-            else if (value <= 50) return round(value / 5) * 5;
-            else return round(value / 50) * 50;
-          } else {
-            return value;
-          }
-        }
+    function colorsMatch(a, b) {
+      return a[0] === b[0] && a[1] === b[1] &&
+             a[2] === b[2] && a[3] === b[3];
+    }
 
-        function eraserTool(x1, y1, x2, y2) {
-          gfx.stroke(0);
-          gfx.strokeWeight(parameters.strokeWeight * 2);
-          gfx.line(x1, y1, x2, y2);
-        }
+    function star(g, x, y, radius1, radius2, npoints) {
+      let angle = TWO_PI / npoints;
+      let halfAngle = angle / 2.0;
+      g.beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        g.vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        g.vertex(sx, sy);
+      }
+      g.endShape(CLOSE);
+    }
+  </script>
 
-        function stickerTool(x, y) {
-          updateRandomness();
-          let hue = randomness.hue.value;
-          let saturation = randomness.saturation.value;
-          let brightness = randomness.brightness.value;
-          let opacity = randomness.opacity.value;
-          let size = getAdjustedValue('strokeWeight', randomness.strokeWeight.value * 5);
-
-          let shapes = ['circle', 'square', 'triangle', 'star'];
-          let shape = random(shapes);
-
-          gfx.fill(hue, saturation, brightness, opacity);
-          gfx.noStroke();
-          gfx.push();
-          gfx.translate(x, y);
-          gfx.rotate(random(TWO_PI));
-          if (shape === 'circle') {
-            gfx.ellipse(0, 0, size, size);
-          } else if (shape === 'square') {
-            gfx.rectMode(CENTER);
-            gfx.rect(0, 0, size, size);
-          } else if (shape === 'triangle') {
-            gfx.triangle(
-              -size / 2, size / 2,
-              size / 2, size / 2,
-              0, -size / 2
-            );
-          } else if (shape === 'star') {
-            star(gfx, 0, 0, size / 2, size, 5);
-          }
-          gfx.pop();
-        }
-
-        function paintBucketTool(x, y) {
-          gfx.loadPixels();
-          let d = pixelDensity(), w = gfx.width * d, h = gfx.height * d;
-          let startX = floor(x * d), startY = floor(y * d);
-          let index = 4 * (startX + startY * w);
-          let targetColor = [
-            gfx.pixels[index], gfx.pixels[index + 1],
-            gfx.pixels[index + 2], gfx.pixels[index + 3]
-          ];
-          updateRandomness();
-          let hue = randomness.hue.value;
-          let saturation = randomness.saturation.value;
-          let brightness = randomness.brightness.value;
-          let opacity = randomness.opacity.value;
-          let replacementColor = gfx.color(hue, saturation, brightness, opacity);
-          let replacementColorArray = replacementColor.levels;
-
-          if (colorsMatch(targetColor, replacementColorArray)) return;
-          floodFill(gfx, startX, startY, targetColor, replacementColorArray, w, h);
-          gfx.updatePixels();
-        }
-
-        function floodFill(g, x, y, targetColor, replacementColor, w, h) {
-          let stack = [[x, y]];
-          while (stack.length > 0) {
-            let [currentX, currentY] = stack.pop();
-            let index = 4 * (currentX + currentY * w);
-            let currentColor = [
-              g.pixels[index], g.pixels[index + 1],
-              g.pixels[index + 2], g.pixels[index + 3]
-            ];
-
-            if (colorsMatch(currentColor, targetColor)) {
-              g.pixels[index] = replacementColor[0];
-              g.pixels[index + 1] = replacementColor[1];
-              g.pixels[index + 2] = replacementColor[2];
-              g.pixels[index + 3] = replacementColor[3];
-
-              if (currentX + 1 < w) stack.push([currentX + 1, currentY]);
-              if (currentX - 1 >= 0) stack.push([currentX - 1, currentY]);
-              if (currentY + 1 < h) stack.push([currentX, currentY + 1]);
-              if (currentY - 1 >= 0) stack.push([currentX, currentY - 1]);
-            }
-          }
-        }
-
-        function colorsMatch(a, b) {
-          return a[0] === b[0] && a[1] === b[1] &&
-                 a[2] === b[2] && a[3] === b[3];
-        }
-
-        function star(g, x, y, radius1, radius2, npoints) {
-          let angle = TWO_PI / npoints;
-          let halfAngle = angle / 2.0;
-          g.beginShape();
-          for (let a = 0; a < TWO_PI; a += angle) {
-            let sx = x + cos(a) * radius2;
-            let sy = y + sin(a) * radius2;
-            g.vertex(sx, sy);
-            sx = x + cos(a + halfAngle) * radius1;
-            sy = y + sin(a + halfAngle) * radius1;
-            g.vertex(sx, sy);
-          }
-          g.endShape(CLOSE);
-        }
-      </script>
-
-    </body>
-    </html>
-    
+</body>
+</html>
