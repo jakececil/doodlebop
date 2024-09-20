@@ -20,7 +20,7 @@
       top: 10px;
       left: 10px;
       z-index: 10;
-      background: rgba(255, 255, 255, 1); /* Increased opacity to 100% */
+      background: rgba(255, 255, 255, 1);
       padding: 10px;
       border-radius: 5px;
       max-height: 90vh;
@@ -66,6 +66,8 @@
       <button class="button" onclick="setBrush('paintBucket')">Paint Bucket</button>
       <button class="button" onclick="setBrush('eraser')">Eraser</button>
       <button class="button" onclick="muddleCanvas()">Muddle</button>
+      <button class="button" onclick="undo()">Undo</button>
+      <button class="button" onclick="resetParameters()">Reset Parameters</button>
       <button class="button" onclick="clearCanvas()">Clear Canvas</button>
       <button class="button" onclick="saveCanvasArt()">Save Art</button>
     </div>
@@ -161,8 +163,8 @@
     let previousX = null;
     let previousY = null;
 
-    // Parameters
-    let parameters = {
+    // Default Parameters
+    const defaultParameters = {
       hue: 0,
       saturation: 100,
       brightness: 100,
@@ -170,6 +172,9 @@
       strokeWeight: 5,
       spread: 1
     };
+
+    // Parameters
+    let parameters = { ...defaultParameters };
 
     // Randomness Toggles and Amounts
     let randomness = {
@@ -181,17 +186,23 @@
       spread: { enabled: false, amount: 0 }
     };
 
+    // History for Undo Feature
+    let history = [];
+    let maxHistorySize = 50; // Limit the history size to prevent excessive memory usage
+
     function setup() {
       createCanvas(windowWidth, windowHeight);
       background(0);
       colorMode(HSB, 360, 100, 100, 255);
       // Initialize sliders and event listeners
       initializeControls();
+      saveHistory(); // Save the initial state
     }
 
     function windowResized() {
       resizeCanvas(windowWidth, windowHeight);
       background(0);
+      saveHistory(); // Save state after resizing
     }
 
     function draw() {
@@ -245,6 +256,7 @@
     function touchEnded() {
       previousX = null;
       previousY = null;
+      saveHistory(); // Save the state after drawing
     }
 
     function setBrush(brush) {
@@ -253,6 +265,7 @@
 
     function clearCanvas() {
       background(0);
+      saveHistory(); // Save the cleared state
     }
 
     function saveCanvasArt() {
@@ -277,6 +290,57 @@
         }
       }
       updatePixels();
+      saveHistory(); // Save the state after muddling
+    }
+
+    function undo() {
+      if (history.length > 1) {
+        history.pop(); // Remove the current state
+        let img = history[history.length - 1];
+        clear();
+        image(img, 0, 0);
+      } else if (history.length === 1) {
+        history.pop();
+        clear();
+        background(0);
+      }
+    }
+
+    function saveHistory() {
+      history.push(get()); // Save a snapshot of the current canvas
+      if (history.length > maxHistorySize) {
+        history.shift(); // Remove the oldest history item
+      }
+    }
+
+    function resetParameters() {
+      // Reset parameters to default values
+      parameters = { ...defaultParameters };
+
+      // Update sliders and labels
+      let params = ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread'];
+      params.forEach(param => {
+        let slider = document.getElementById(param + 'Slider');
+        let valueLabel = document.getElementById(param + 'Value');
+        slider.value = defaultParameters[param];
+        valueLabel.textContent = defaultParameters[param];
+      });
+
+      // Reset randomness toggles and amounts
+      params.forEach(param => {
+        randomness[param].enabled = false;
+        randomness[param].amount = 0;
+
+        let randomToggle = document.getElementById(param + 'RandomToggle');
+        let randomnessContainer = document.getElementById(param + 'RandomnessContainer');
+        let randomnessSlider = document.getElementById(param + 'RandomnessSlider');
+        let randomnessValueLabel = document.getElementById(param + 'RandomnessValue');
+
+        randomToggle.checked = false;
+        randomnessContainer.style.display = 'none';
+        randomnessSlider.value = 0;
+        randomnessValueLabel.textContent = 0;
+      });
     }
 
     // Initialize controls and event listeners
@@ -397,6 +461,7 @@
 
       floodFill(startX, startY, targetColor, replacementColorArray, w, h);
       updatePixels();
+      saveHistory(); // Save the state after filling
     }
 
     function floodFill(x, y, targetColor, replacementColor, w, h) {
