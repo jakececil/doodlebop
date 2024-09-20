@@ -21,7 +21,6 @@
     .slider { width: 150px; }
     .toggle-container { display: flex; align-items: center; margin: 5px 0; }
     .toggle-label { font-size: 12px; margin-left: 5px; }
-    /* Highlighting the selected parameter */
     .selected-parameter { background-color: rgba(200, 200, 200, 0.2); }
   </style>
 </head>
@@ -174,7 +173,6 @@
     highlightCurrentParameter();
     highlightCurrentBrush();
     saveHistory();
-    console.log('Initial history length:', history.length);
 
     // Keyboard events
     document.addEventListener('keydown', handleKeyDown);
@@ -278,34 +276,21 @@
     redoStack = [];
   }
 
-   function undo() {
-    console.log('Undo called');
-    console.log('History length before undo:', history.length);
+  function undo() {
     if (history.length > 1) {
       redoStack.push(history.pop());
       let img = history[history.length - 1];
       gfx.clear();
       gfx.image(img, 0, 0);
-      console.log('Undo successful');
-      console.log('History length after undo:', history.length);
-      console.log('Redo stack length:', redoStack.length);
-    } else {
-      console.log('Nothing to undo');
     }
   }
 
   function redo() {
-    console.log('Redo called');
     if (redoStack.length > 0) {
       let img = redoStack.pop();
       history.push(img);
       gfx.clear();
       gfx.image(img, 0, 0);
-      console.log('Redo successful');
-      console.log('History length:', history.length);
-      console.log('Redo stack length after redo:', redoStack.length);
-    } else {
-      console.log('Nothing to redo');
     }
   }
 
@@ -315,10 +300,9 @@
     if (history.length > maxHistorySize) {
       history.shift();
     }
-    console.log('History saved. Current history length:', history.length);
   }
-  }
-
+</script>
+<script>
   function resetParameters() {
     parameters = { ...defaultParameters };
     ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread', 'speed'].forEach(param => {
