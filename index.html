@@ -282,11 +282,8 @@
       let img = history[history.length - 1];
       gfx.clear();
       gfx.image(img, 0, 0);
-    } else if (history.length === 1) {
-      redoStack.push(history.pop());
-      gfx.clear();
-      gfx.background(0);
     }
+    // Do not allow history to become empty
   }
 
   function redo() {
