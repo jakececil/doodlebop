@@ -489,7 +489,7 @@
     let opacity = randomness.opacity.value;
     let size = getAdjustedValue('strokeWeight', randomness.strokeWeight.value * 5);
 
-    let shapes = ['circle', 'square', 'triangle', 'star', 'pentagon', 'hexagon', 'heart', 'spiral', 'cloud', 'flower'];
+    let shapes = ['circle', 'square', 'triangle', 'star', 'pentagon', 'hexagon', 'cloud', 'flower'];
     let shape = random(shapes);
 
     gfx.fill(hue, saturation, brightness, opacity);
@@ -514,10 +514,6 @@
       polygon(gfx, 0, 0, size / 2, 5);
     } else if (shape === 'hexagon') {
       polygon(gfx, 0, 0, size / 2, 6);
-    } else if (shape === 'heart') {
-      heart(gfx, 0, 0, size);
-    } else if (shape === 'spiral') {
-      spiral(gfx, 0, 0, size);
     } else if (shape === 'cloud') {
       cloud(gfx, 0, 0, size);
     } else if (shape === 'flower') {
@@ -609,21 +605,6 @@
     g.bezierVertex(x + size / 2, y - size / 2, x + size / 2, y + size / 3, x, y + size / 2);
     g.bezierVertex(x - size / 2, y + size / 3, x - size / 2, y - size / 2, x, y - size / 2);
     g.endShape(CLOSE);
-  }
-
-  function spiral(g, x, y, size) {
-    let angle = 0;
-    let radius = 0;
-    g.noFill();
-    g.beginShape();
-    for (let i = 0; i < 100; i++) {
-      let sx = x + cos(angle) * radius;
-      let sy = y + sin(angle) * radius;
-      g.vertex(sx, sy);
-      angle += 0.1;
-      radius += size / 100;
-    }
-    g.endShape();
   }
 
   function cloud(g, x, y, size) {
