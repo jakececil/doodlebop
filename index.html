@@ -9,29 +9,39 @@
     body {
       margin: 0;
       overflow: hidden;
-      touch-action: none; /* Prevent default touch actions */
+      touch-action: none;
     }
     canvas {
       display: block;
     }
-    /* Simple UI styling */
+    /* UI Styling */
     #controls {
       position: absolute;
       top: 10px;
       left: 10px;
       z-index: 10;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
     }
     .button {
-      padding: 10px 15px;
+      padding: 5px 10px;
       margin: 5px;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(200, 200, 200, 0.8);
       border: none;
       border-radius: 5px;
       cursor: pointer;
       font-size: 14px;
     }
-    .button:hover {
-      background: rgba(200, 200, 200, 0.8);
+    .slider-container {
+      margin: 5px 0;
+    }
+    .slider-label {
+      font-size: 12px;
+      display: block;
+    }
+    .slider {
+      width: 150px;
     }
   </style>
 </head>
@@ -39,20 +49,46 @@
 
   <!-- UI Controls -->
   <div id="controls">
-    <button class="button" onclick="setBrush('noise')">Noise Brush</button>
-    <button class="button" onclick="setBrush('pixelDissolve')">Pixel Dissolve</button>
-    <button class="button" onclick="setBrush('ink')">Organic Ink</button>
-    <button class="button" onclick="clearCanvas()">Clear Canvas</button>
+    <div>
+      <button class="button" onclick="setBrush('sizeChanging')">Size Changing Brush</button>
+      <button class="button" onclick="setBrush('colorChanging')">Color Changing Brush</button>
+      <button class="button" onclick="setBrush('filling')">Filling Brush</button>
+      <button class="button" onclick="clearCanvas()">Clear Canvas</button>
+      <button class="button" onclick="muddleCanvas()">Muddle Canvas</button>
+    </div>
+    <div class="slider-container">
+      <label class="slider-label">Randomness: <span id="randomnessValue">50</span></label>
+      <input type="range" id="randomnessSlider" class="slider" min="0" max="100" value="50" oninput="updateRandomnessValue()">
+    </div>
+    <div class="slider-container">
+      <label class="slider-label">Scale: <span id="scaleValue">1</span></label>
+      <input type="range" id="scaleSlider" class="slider" min="0.1" max="5" step="0.1" value="1" oninput="updateScaleValue()">
+    </div>
+    <div class="slider-container">
+      <label class="slider-label">Color Saturation: <span id="saturationValue">100</span></label>
+      <input type="range" id="saturationSlider" class="slider" min="0" max="100" value="100" oninput="updateSaturationValue()">
+    </div>
+    <div class="slider-container">
+      <label class="slider-label">Opacity: <span id="opacityValue">255</span></label>
+      <input type="range" id="opacitySlider" class="slider" min="0" max="255" value="255" oninput="updateOpacityValue()">
+    </div>
   </div>
 
   <script>
-    let currentBrush = 'noise';
+    let currentBrush = 'sizeChanging';
     let previousX = null;
     let previousY = null;
+    let scale = 1;
+    let opacity = 255;
+    let randomness = 50;
+    let saturation = 100;
+
+    let colorHue = 0;
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
       background(0);
+      colorMode(HSB, 360, 100, 100, 255);
       strokeWeight(2);
     }
 
@@ -74,14 +110,12 @@
         previousY = y;
       }
 
-      stroke(randomColor());
-
-      if (currentBrush === 'noise') {
-        noiseBrush(previousX, previousY, x, y);
-      } else if (currentBrush === 'pixelDissolve') {
-        pixelDissolveBrush(previousX, previousY, x, y);
-      } else if (currentBrush === 'ink') {
-        organicInkBrush(previousX, previousY, x, y);
+      if (currentBrush === 'sizeChanging') {
+        sizeChangingBrush(previousX, previousY, x, y);
+      } else if (currentBrush === 'colorChanging') {
+        colorChangingBrush(previousX, previousY, x, y);
+      } else if (currentBrush === 'filling') {
+        fillingBrush(previousX, previousY, x, y);
       }
 
       previousX = x;
@@ -103,46 +137,71 @@
       background(0);
     }
 
-    function randomColor() {
-      return color(random(255), random(255), random(255));
-    }
-
-    // Brush Implementations
-    function noiseBrush(x1, y1, x2, y2) {
-      line(x1, y1, x2, y2);
-      let density = 20;
-      for (let i = 0; i < density; i++) {
-        let offsetX = random(-10, 10);
-        let offsetY = random(-10, 10);
-        point(x2 + offsetX, y2 + offsetY);
-      }
-    }
-
-    function pixelDissolveBrush(x1, y1, x2, y2) {
-      line(x1, y1, x2, y2);
+    function muddleCanvas() {
       loadPixels();
       let d = pixelDensity();
       let totalPixels = 4 * (width * d) * (height * d);
-      for (let i = 0; i < 1000; i++) {
-        let index = floor(random(totalPixels / 4)) * 4;
-        pixels[index] = pixels[index + floor(random(-40, 40))];
-        pixels[index + 1] = pixels[index + 1 + floor(random(-40, 40))];
-        pixels[index + 2] = pixels[index + 2 + floor(random(-40, 40))];
+      for (let i = 0; i < totalPixels; i += 4) {
+        let rand = floor(random(-randomness, randomness)) * 4;
+        let newIndex = i + rand;
+        if (newIndex >= 0 && newIndex < totalPixels) {
+          pixels[i] = pixels[newIndex];
+          pixels[i + 1] = pixels[newIndex + 1];
+          pixels[i + 2] = pixels[newIndex + 2];
+          pixels[i + 3] = pixels[newIndex + 3];
+        }
       }
       updatePixels();
     }
 
-    function organicInkBrush(x1, y1, x2, y2) {
-      strokeWeight(random(1, 5));
+    function updateRandomnessValue() {
+      randomness = document.getElementById('randomnessSlider').value;
+      document.getElementById('randomnessValue').textContent = randomness;
+    }
+
+    function updateScaleValue() {
+      scale = document.getElementById('scaleSlider').value;
+      document.getElementById('scaleValue').textContent = scale;
+    }
+
+    function updateOpacityValue() {
+      opacity = document.getElementById('opacitySlider').value;
+      document.getElementById('opacityValue').textContent = opacity;
+    }
+
+    function updateSaturationValue() {
+      saturation = document.getElementById('saturationSlider').value;
+      document.getElementById('saturationValue').textContent = saturation;
+    }
+
+    // Brush Implementations
+    function sizeChangingBrush(x1, y1, x2, y2) {
+      let weight = (sin(frameCount * 0.1) * 5 + 6) * scale; // Regularly changing size
+      strokeWeight(weight);
+      stroke(colorHue, saturation, 100, opacity);
       line(x1, y1, x2, y2);
-      strokeWeight(2);
+    }
+
+    function colorChangingBrush(x1, y1, x2, y2) {
+      colorHue = (colorHue + random(5, 15)) % 360; // Randomly changing color
+      stroke(colorHue, saturation, 100, opacity);
+      strokeWeight(2 * scale);
+      line(x1, y1, x2, y2);
+    }
+
+    function fillingBrush(x1, y1, x2, y2) {
+      stroke(colorHue, saturation, 100, opacity);
+      strokeWeight(1 * scale);
+      line(x1, y1, x2, y2);
+      if (previousX !== null && previousY !== null) {
+        line(x1, y1, previousX, previousY); // Fill between current and previous points
+      }
     }
 
     // Prevent scrolling on mobile
     document.addEventListener('touchmove', function(e) {
       e.preventDefault();
     }, { passive: false });
-
   </script>
 
 </body>
