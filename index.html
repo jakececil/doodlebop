@@ -209,6 +209,7 @@
       resizeCanvas(windowWidth, windowHeight);
       let newGfx = createGraphics(windowWidth, windowHeight);
       newGfx.colorMode(HSB, 360, 100, 100, 255);
+      newGfx.background(0);
       newGfx.image(gfx, 0, 0);
       gfx = newGfx;
       saveHistory(); // Save state after resizing
@@ -311,16 +312,20 @@
       if (history.length > 1) {
         history.pop(); // Remove the current state
         let img = history[history.length - 1];
-        gfx.clear();
-        gfx.image(img, 0, 0);
+        gfx = img;
       } else if (history.length === 1) {
         history.pop();
+        gfx = createGraphics(windowWidth, windowHeight);
+        gfx.colorMode(HSB, 360, 100, 100, 255);
         gfx.background(0);
       }
     }
 
     function saveHistory() {
-      let img = gfx.get();
+      let img = createGraphics(gfx.width, gfx.height);
+      img.colorMode(HSB, 360, 100, 100, 255);
+      img.background(0); // Ensure the background is black
+      img.image(gfx, 0, 0);
       history.push(img);
       if (history.length > maxHistorySize) {
         history.shift(); // Remove the oldest history item
