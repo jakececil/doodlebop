@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Interactive Generative Art</title>
+  <title>Interactive Generative Art Tool</title>
   <!-- Include p5.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
   <style>
@@ -65,6 +65,7 @@
       <button class="button" onclick="setBrush('sticker')">Sticker Tool</button>
       <button class="button" onclick="setBrush('paintBucket')">Paint Bucket</button>
       <button class="button" onclick="setBrush('eraser')">Eraser</button>
+      <button class="button" onclick="muddleCanvas()">Muddle</button>
       <button class="button" onclick="clearCanvas()">Clear Canvas</button>
       <button class="button" onclick="saveCanvasArt()">Save Art</button>
     </div>
@@ -72,84 +73,84 @@
     <!-- Hue Slider -->
     <div class="slider-container">
       <label class="slider-label">Hue: <span id="hueValue">0</span></label>
-      <input type="range" id="hueSlider" class="slider" min="0" max="360" value="0" oninput="updateParameter('hue')">
+      <input type="range" id="hueSlider" class="slider" min="0" max="360" value="0">
       <div class="toggle-container">
-        <input type="checkbox" id="hueRandomToggle" onchange="toggleRandomness('hue')">
+        <input type="checkbox" id="hueRandomToggle">
         <label class="toggle-label" for="hueRandomToggle">Random Hue</label>
       </div>
       <div id="hueRandomnessContainer" style="display: none;">
         <label class="slider-label">Hue Randomness: <span id="hueRandomnessValue">0</span></label>
-        <input type="range" id="hueRandomnessSlider" class="slider" min="0" max="180" value="0" oninput="updateRandomness('hue')">
+        <input type="range" id="hueRandomnessSlider" class="slider" min="0" max="180" value="0">
       </div>
     </div>
 
     <!-- Saturation Slider -->
     <div class="slider-container">
       <label class="slider-label">Saturation: <span id="saturationValue">100</span></label>
-      <input type="range" id="saturationSlider" class="slider" min="0" max="100" value="100" oninput="updateParameter('saturation')">
+      <input type="range" id="saturationSlider" class="slider" min="0" max="100" value="100">
       <div class="toggle-container">
-        <input type="checkbox" id="saturationRandomToggle" onchange="toggleRandomness('saturation')">
+        <input type="checkbox" id="saturationRandomToggle">
         <label class="toggle-label" for="saturationRandomToggle">Random Saturation</label>
       </div>
       <div id="saturationRandomnessContainer" style="display: none;">
         <label class="slider-label">Saturation Randomness: <span id="saturationRandomnessValue">0</span></label>
-        <input type="range" id="saturationRandomnessSlider" class="slider" min="0" max="100" value="0" oninput="updateRandomness('saturation')">
+        <input type="range" id="saturationRandomnessSlider" class="slider" min="0" max="100" value="0">
       </div>
     </div>
 
     <!-- Brightness Slider -->
     <div class="slider-container">
       <label class="slider-label">Brightness: <span id="brightnessValue">100</span></label>
-      <input type="range" id="brightnessSlider" class="slider" min="0" max="100" value="100" oninput="updateParameter('brightness')">
+      <input type="range" id="brightnessSlider" class="slider" min="0" max="100" value="100">
       <div class="toggle-container">
-        <input type="checkbox" id="brightnessRandomToggle" onchange="toggleRandomness('brightness')">
+        <input type="checkbox" id="brightnessRandomToggle">
         <label class="toggle-label" for="brightnessRandomToggle">Random Brightness</label>
       </div>
       <div id="brightnessRandomnessContainer" style="display: none;">
         <label class="slider-label">Brightness Randomness: <span id="brightnessRandomnessValue">0</span></label>
-        <input type="range" id="brightnessRandomnessSlider" class="slider" min="0" max="100" value="0" oninput="updateRandomness('brightness')">
+        <input type="range" id="brightnessRandomnessSlider" class="slider" min="0" max="100" value="0">
       </div>
     </div>
 
     <!-- Opacity Slider -->
     <div class="slider-container">
       <label class="slider-label">Opacity: <span id="opacityValue">255</span></label>
-      <input type="range" id="opacitySlider" class="slider" min="0" max="255" value="255" oninput="updateParameter('opacity')">
+      <input type="range" id="opacitySlider" class="slider" min="0" max="255" value="255">
       <div class="toggle-container">
-        <input type="checkbox" id="opacityRandomToggle" onchange="toggleRandomness('opacity')">
+        <input type="checkbox" id="opacityRandomToggle">
         <label class="toggle-label" for="opacityRandomToggle">Random Opacity</label>
       </div>
       <div id="opacityRandomnessContainer" style="display: none;">
         <label class="slider-label">Opacity Randomness: <span id="opacityRandomnessValue">0</span></label>
-        <input type="range" id="opacityRandomnessSlider" class="slider" min="0" max="255" value="0" oninput="updateRandomness('opacity')">
+        <input type="range" id="opacityRandomnessSlider" class="slider" min="0" max="255" value="0">
       </div>
     </div>
 
     <!-- Stroke Weight Slider -->
     <div class="slider-container">
       <label class="slider-label">Stroke Weight: <span id="strokeWeightValue">5</span></label>
-      <input type="range" id="strokeWeightSlider" class="slider" min="1" max="50" value="5" oninput="updateParameter('strokeWeight')">
+      <input type="range" id="strokeWeightSlider" class="slider" min="1" max="50" value="5">
       <div class="toggle-container">
-        <input type="checkbox" id="strokeWeightRandomToggle" onchange="toggleRandomness('strokeWeight')">
+        <input type="checkbox" id="strokeWeightRandomToggle">
         <label class="toggle-label" for="strokeWeightRandomToggle">Random Stroke Weight</label>
       </div>
       <div id="strokeWeightRandomnessContainer" style="display: none;">
         <label class="slider-label">Stroke Weight Randomness: <span id="strokeWeightRandomnessValue">0</span></label>
-        <input type="range" id="strokeWeightRandomnessSlider" class="slider" min="0" max="50" value="0" oninput="updateRandomness('strokeWeight')">
+        <input type="range" id="strokeWeightRandomnessSlider" class="slider" min="0" max="50" value="0">
       </div>
     </div>
 
     <!-- Spread Slider -->
     <div class="slider-container">
       <label class="slider-label">Spread: <span id="spreadValue">1</span></label>
-      <input type="range" id="spreadSlider" class="slider" min="1" max="50" value="1" oninput="updateParameter('spread')">
+      <input type="range" id="spreadSlider" class="slider" min="1" max="50" value="1">
       <div class="toggle-container">
-        <input type="checkbox" id="spreadRandomToggle" onchange="toggleRandomness('spread')">
+        <input type="checkbox" id="spreadRandomToggle">
         <label class="toggle-label" for="spreadRandomToggle">Random Spread</label>
       </div>
       <div id="spreadRandomnessContainer" style="display: none;">
         <label class="slider-label">Spread Randomness: <span id="spreadRandomnessValue">0</span></label>
-        <input type="range" id="spreadRandomnessSlider" class="slider" min="0" max="50" value="0" oninput="updateRandomness('spread')">
+        <input type="range" id="spreadRandomnessSlider" class="slider" min="0" max="50" value="0">
       </div>
     </div>
 
@@ -184,9 +185,8 @@
       createCanvas(windowWidth, windowHeight);
       background(0);
       colorMode(HSB, 360, 100, 100, 255);
-
-      // Initialize parameter values from sliders
-      updateAllParameters();
+      // Initialize sliders and event listeners
+      initializeControls();
     }
 
     function windowResized() {
@@ -259,33 +259,54 @@
       saveCanvas('myArt', 'png');
     }
 
-    // Update Parameters
-    function updateParameter(param) {
-      let value = document.getElementById(param + 'Slider').value;
-      parameters[param] = parseFloat(value);
-      document.getElementById(param + 'Value').textContent = value;
-    }
-
-    // Update all parameters at startup
-    function updateAllParameters() {
-      let params = ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread'];
-      for (let param of params) {
-        updateParameter(param);
+    function muddleCanvas() {
+      loadPixels();
+      let d = pixelDensity();
+      let w = width * d;
+      let h = height * d;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let index = 4 * (x + y * w);
+          let randX = constrain(x + floor(random(-10, 10)), 0, w - 1);
+          let randY = constrain(y + floor(random(-10, 10)), 0, h - 1);
+          let newIndex = 4 * (randX + randY * w);
+          pixels[index] = pixels[newIndex];
+          pixels[index + 1] = pixels[newIndex + 1];
+          pixels[index + 2] = pixels[newIndex + 2];
+          pixels[index + 3] = pixels[newIndex + 3];
+        }
       }
+      updatePixels();
     }
 
-    // Toggle Randomness
-    function toggleRandomness(param) {
-      let enabled = document.getElementById(param + 'RandomToggle').checked;
-      randomness[param].enabled = enabled;
-      document.getElementById(param + 'RandomnessContainer').style.display = enabled ? 'block' : 'none';
-    }
+    // Initialize controls and event listeners
+    function initializeControls() {
+      // List of parameters
+      let params = ['hue', 'saturation', 'brightness', 'opacity', 'strokeWeight', 'spread'];
 
-    // Update Randomness Amount
-    function updateRandomness(param) {
-      let value = document.getElementById(param + 'RandomnessSlider').value;
-      randomness[param].amount = parseFloat(value);
-      document.getElementById(param + 'RandomnessValue').textContent = value;
+      // Initialize sliders and labels
+      params.forEach(param => {
+        let slider = document.getElementById(param + 'Slider');
+        let valueLabel = document.getElementById(param + 'Value');
+        slider.addEventListener('input', () => {
+          parameters[param] = parseFloat(slider.value);
+          valueLabel.textContent = slider.value;
+        });
+        // Initialize randomness toggles
+        let randomToggle = document.getElementById(param + 'RandomToggle');
+        let randomnessContainer = document.getElementById(param + 'RandomnessContainer');
+        randomToggle.addEventListener('change', () => {
+          randomness[param].enabled = randomToggle.checked;
+          randomnessContainer.style.display = randomToggle.checked ? 'block' : 'none';
+        });
+        // Initialize randomness sliders
+        let randomnessSlider = document.getElementById(param + 'RandomnessSlider');
+        let randomnessValueLabel = document.getElementById(param + 'RandomnessValue');
+        randomnessSlider.addEventListener('input', () => {
+          randomness[param].amount = parseFloat(randomnessSlider.value);
+          randomnessValueLabel.textContent = randomnessSlider.value;
+        });
+      });
     }
 
     // Brush Implementations
