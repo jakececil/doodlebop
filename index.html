@@ -32,7 +32,9 @@
       <button class="button" onclick="setBrush('paintBucket')">Paint Bucket</button>
       <button class="button" onclick="setBrush('eraser')">Eraser</button>
       <button class="button" onclick="muddleCanvas()">Muddle</button>
+      <button class="button" onclick="megaMuddleCanvas()">Mega Muddle</button>
       <button class="button" onclick="undo()">Undo</button>
+      <button class="button" onclick="redo()">Redo</button>
       <button class="button" onclick="resetParameters()">Reset Parameters</button>
       <button class="button" onclick="clearCanvas()">Clear Canvas</button>
       <button class="button" onclick="saveCanvasArt()">Save Art</button>
@@ -146,6 +148,7 @@
     });
 
     let history = [];
+    let redoStack = [];
     let maxHistorySize = 50;
     let gfx;
 
@@ -181,13 +184,13 @@
       if (event.target.closest('#controls')) return;
       let x = mouseX, y = mouseY;
 
-      if (currentBrush !== 'paintBucket') saveHistory();
+      saveHistory();
+      redoStack = []; // Clear redo stack when new action is taken
 
-      if (currentBrush === 'sticker') {
-        stickerTool(x, y);
-      } else if (currentBrush === 'paintBucket') {
+      if (currentBrush === 'paintBucket') {
         paintBucketTool(x, y);
-        saveHistory();
+      } else if (currentBrush === 'sticker') {
+        stickerTool(x, y);
       }
 
       previousX = x; previousY = y;
@@ -215,19 +218,28 @@
 
     function setBrush(brush) { currentBrush = brush; }
 
-    function clearCanvas() { gfx.background(0); saveHistory(); }
+    function clearCanvas() { gfx.background(0); saveHistory(); redoStack = []; }
 
     function saveCanvasArt() { saveCanvas(gfx, 'myArt', 'png'); }
 
     function muddleCanvas() {
-      saveHistory();
+      saveHistory(); redoStack = [];
+      applyMuddle(10);
+    }
+
+    function megaMuddleCanvas() {
+      saveHistory(); redoStack = [];
+      applyMuddle(100);
+    }
+
+    function applyMuddle(amount) {
       gfx.loadPixels();
       let d = pixelDensity(), w = gfx.width * d, h = gfx.height * d;
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           let index = 4 * (x + y * w);
-          let randX = constrain(x + floor(random(-10, 10)), 0, w - 1);
-          let randY = constrain(y + floor(random(-10, 10)), 0, h - 1);
+          let randX = constrain(x + floor(random(-amount, amount)), 0, w - 1);
+          let randY = constrain(y + floor(random(-amount, amount)), 0, h - 1);
           let newIndex = 4 * (randX + randY * w);
           gfx.pixels[index] = gfx.pixels[newIndex];
           gfx.pixels[index + 1] = gfx.pixels[newIndex + 1];
@@ -240,14 +252,25 @@
 
     function undo() {
       if (history.length > 1) {
-        history.pop();
-        let img = history[history.length - 1];
+        let img = history.pop();
+        redoStack.push(img);
+        let prevImg = history[history.length - 1];
         gfx.clear();
-        gfx.image(img, 0, 0);
+        gfx.image(prevImg, 0, 0);
       } else if (history.length === 1) {
-        history.pop();
+        let img = history.pop();
+        redoStack.push(img);
         gfx.clear();
         gfx.background(0);
+      }
+    }
+
+    function redo() {
+      if (redoStack.length > 0) {
+        let img = redoStack.pop();
+        history.push(img);
+        gfx.clear();
+        gfx.image(img, 0, 0);
       }
     }
 
@@ -398,7 +421,7 @@
       let opacity = randomness.opacity.value;
       let size = getAdjustedValue('strokeWeight', randomness.strokeWeight.value * 5);
 
-      let shapes = ['circle', 'square', 'triangle', 'star'];
+      let shapes = ['circle', 'square', 'triangle', 'star', 'pentagon', 'hexagon', 'heart', 'spiral', 'cloud', 'flower'];
       let shape = random(shapes);
 
       gfx.fill(hue, saturation, brightness, opacity);
@@ -419,6 +442,18 @@
         );
       } else if (shape === 'star') {
         star(gfx, 0, 0, size / 2, size, 5);
+      } else if (shape === 'pentagon') {
+        polygon(gfx, 0, 0, size / 2, 5);
+      } else if (shape === 'hexagon') {
+        polygon(gfx, 0, 0, size / 2, 6);
+      } else if (shape === 'heart') {
+        heart(gfx, 0, 0, size);
+      } else if (shape === 'spiral') {
+        spiral(gfx, 0, 0, size);
+      } else if (shape === 'cloud') {
+        cloud(gfx, 0, 0, size);
+      } else if (shape === 'flower') {
+        flower(gfx, 0, 0, size);
       }
       gfx.pop();
     }
@@ -487,6 +522,56 @@
         g.vertex(sx, sy);
       }
       g.endShape(CLOSE);
+    }
+
+    function polygon(g, x, y, radius, npoints) {
+      let angle = TWO_PI / npoints;
+      g.beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius;
+        let sy = y + sin(a) * radius;
+        g.vertex(sx, sy);
+      }
+      g.endShape(CLOSE);
+    }
+
+    function heart(g, x, y, size) {
+      g.beginShape();
+      g.vertex(x, y - size / 2);
+      g.bezierVertex(x + size / 2, y - size / 2, x + size / 2, y + size / 3, x, y + size / 2);
+      g.bezierVertex(x - size / 2, y + size / 3, x - size / 2, y - size / 2, x, y - size / 2);
+      g.endShape(CLOSE);
+    }
+
+    function spiral(g, x, y, size) {
+      let angle = 0;
+      let radius = 0;
+      g.noFill();
+      g.beginShape();
+      for (let i = 0; i < 100; i++) {
+        let sx = x + cos(angle) * radius;
+        let sy = y + sin(angle) * radius;
+        g.vertex(sx, sy);
+        angle += 0.1;
+        radius += size / 100;
+      }
+      g.endShape();
+    }
+
+    function cloud(g, x, y, size) {
+      g.ellipse(x - size / 4, y, size / 2, size / 2);
+      g.ellipse(x + size / 4, y, size / 2, size / 2);
+      g.ellipse(x, y - size / 4, size / 2, size / 2);
+    }
+
+    function flower(g, x, y, size) {
+      g.push();
+      for (let i = 0; i < 8; i++) {
+        g.ellipse(x, y - size / 2, size / 4, size / 2);
+        g.rotate(PI / 4);
+      }
+      g.pop();
+      g.ellipse(x, y, size / 2, size / 2);
     }
   </script>
 
