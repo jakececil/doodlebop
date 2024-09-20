@@ -20,7 +20,7 @@
       top: 10px;
       left: 10px;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       padding: 10px;
       border-radius: 5px;
     }
@@ -84,6 +84,8 @@
     let saturation = 100;
 
     let colorHue = 0;
+    let colorChangeCounter = 0;
+    let colorHoldTime = 0;
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
@@ -102,6 +104,11 @@
     }
 
     function touchMoved() {
+      // Prevent drawing under the controls
+      if (isMouseOverControls()) {
+        return false;
+      }
+
       let x = mouseX;
       let y = mouseY;
 
@@ -183,7 +190,15 @@
     }
 
     function colorChangingBrush(x1, y1, x2, y2) {
-      colorHue = (colorHue + random(5, 15)) % 360; // Randomly changing color
+      if (colorHoldTime <= 0) {
+        // Randomly decide how long to hold the current color
+        colorHoldTime = floor(random(10, 100));
+        // Randomly decide whether to change color or not
+        if (random(100) < randomness) {
+          colorHue = random(360);
+        }
+      }
+      colorHoldTime--;
       stroke(colorHue, saturation, 100, opacity);
       strokeWeight(2 * scale);
       line(x1, y1, x2, y2);
@@ -192,10 +207,25 @@
     function fillingBrush(x1, y1, x2, y2) {
       stroke(colorHue, saturation, 100, opacity);
       strokeWeight(1 * scale);
-      line(x1, y1, x2, y2);
+      // Create a filled shape between current and previous points
       if (previousX !== null && previousY !== null) {
-        line(x1, y1, previousX, previousY); // Fill between current and previous points
+        fill(colorHue, saturation, 100, opacity);
+        noStroke();
+        beginShape();
+        vertex(previousX, previousY);
+        vertex(x1, y1);
+        vertex(x2, y2);
+        endShape(CLOSE);
+      } else {
+        point(x1, y1);
       }
+    }
+
+    // Utility Functions
+    function isMouseOverControls() {
+      let controlsRect = document.getElementById('controls').getBoundingClientRect();
+      return mouseX >= controlsRect.left && mouseX <= controlsRect.right &&
+             mouseY >= controlsRect.top && mouseY <= controlsRect.bottom;
     }
 
     // Prevent scrolling on mobile
