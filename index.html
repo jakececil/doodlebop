@@ -9,10 +9,10 @@
     body {
       margin: 0;
       overflow: hidden;
-      touch-action: none;
     }
     canvas {
       display: block;
+      touch-action: none;
     }
     /* UI Styling */
     #controls {
@@ -20,7 +20,7 @@
       top: 10px;
       left: 10px;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 1); /* Increased opacity to 100% */
       padding: 10px;
       border-radius: 5px;
       max-height: 90vh;
@@ -198,9 +198,9 @@
       // No continuous drawing required
     }
 
-    function touchStarted() {
-      if (isMouseOverControls()) {
-        return false;
+    function touchStarted(event) {
+      if (event.target.closest('#controls')) {
+        return;
       }
 
       let x = mouseX;
@@ -215,9 +215,9 @@
       return false;
     }
 
-    function touchMoved() {
-      if (isMouseOverControls()) {
-        return false;
+    function touchMoved(event) {
+      if (event.target.closest('#controls')) {
+        return;
       }
 
       let x = mouseX;
@@ -439,12 +439,6 @@
       }
     }
 
-    function isMouseOverControls() {
-      let controlsRect = document.getElementById('controls').getBoundingClientRect();
-      return mouseX >= controlsRect.left && mouseX <= controlsRect.right &&
-             mouseY >= controlsRect.top && mouseY <= controlsRect.bottom;
-    }
-
     function star(x, y, radius1, radius2, npoints) {
       let angle = TWO_PI / npoints;
       let halfAngle = angle / 2.0;
@@ -460,10 +454,6 @@
       endShape(CLOSE);
     }
 
-    // Prevent scrolling on mobile
-    document.addEventListener('touchmove', function(e) {
-      e.preventDefault();
-    }, { passive: false });
   </script>
 
 </body>
